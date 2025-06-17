@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Secure Local Auth Demo</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+  <style>
+    body { background: linear-gradient(120deg, #4f8cff 0%, #a1c4fd 100%); font-family: Arial, sans-serif; margin: 0; min-height: 100vh; }
+    .center-card, .container { max-width: 500px; margin: 60px auto; background: #fff; border-radius: 16px; box-shadow: 0 8px 32px rgba(80,120,255,0.15); padding: 2.5em 2em 2em 2em; }
+    .container { max-width: 1100px; }
+    h2 { text-align: center; color: #2563eb; margin-bottom: 1.5em; font-weight: 700; }
+    label { display: block; margin-bottom: 1em; color: #2d3a4b; font-weight: 500; }
+    input, select { width: 100%; padding: 0.7em; margin-top: 0.3em; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1em; background: #f9fafb; box-sizing: border-box; }
+    .password-wrapper { position: relative; }
+    .password-wrapper input[type="password"], .password-wrapper input[type="text"] { padding-right: 2.5em; }
+    .toggle-password {
+      position: absolute; right: 0.7em; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; font-size: 1.1em; color: #2563eb;
+      padding: 0; height: 2em; width: 2em; display: flex; align-items: center; justify-content: center;
+    }
+    button { width: 100%; padding: 0.8em; background: #4f8cff; color: #fff; border: none; border-radius: 6px; font-size: 1em; font-weight: 700; cursor: pointer; margin-top: 0.5em; }
+    button:hover { background: #2563eb; }
+    .switch-link { text-align: center; margin-top: 1.2em; font-size: 0.97em; }
+    .switch-link a { color: #4f8cff; text-decoration: underline; cursor: pointer; }
+    .error { color: #e53e3e; background: #fff0f0; border: 1px solid #e53e3e; border-radius: 5px; padding: 0.7em; margin-bottom: 1em; text-align: center; }
+    .success { color: #27ae60; background: #eafaf1; border: 1px solid #27ae60; border-radius: 5px; padding: 0.7em; margin-bottom: 1em; text-align: center; }
+    .file-list { margin-top: 2em; }
+    .file-list ul { list-style: none; padding: 0; }
+    .file-list li { margin-bottom: 0.5em; padding: 0.5em 0.7em; border-radius: 6px; background: #eaf1ff; }
+    .file-list li:hover { background: #d0e2ff; }
+    .file-list a { color: #2563eb; text-decoration: none; font-weight: 500; }
+    .file-list a:hover { color: #1a47b8; text-decoration: underline; }
+    .logout-btn { background: #e53e3e; margin-top: 2em; }
+    .hidden { display: none; }
+    .captcha-box { text-align: center; margin: 1em 0; }
+    /* Admin card grid */
+    .card-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2em;
+      justify-content: center;
+    }
+    .user-card {
+      background: #f4f8ff;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(80,120,255,0.08);
+      padding: 1.5em 1.2em 1.2em 1.2em;
+      min-width: 260px;
+      max-width: 320px;
+      flex: 1 1 260px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      transition: box-shadow 0.2s, transform 0.2s;
+      margin-bottom: 1em;
+    }
+    .user-card:hover {
+      box-shadow: 0 6px 24px rgba(80,120,255,0.18);
+      transform: translateY(-4px) scale(1.03);
+    }
+    .user-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1em;
+    }
+    .user-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #4f8cff;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+      font-weight: 700;
+      margin-right: 0.8em;
+      box-shadow: 0 2px 8px rgba(80,120,255,0.10);
+    }
+    .user-name {
+      font-size: 1.1em;
+      font-weight: 700;
+      color: #2563eb;
+      letter-spacing: 0.5px;
+    }
+    @media (max-width: 900px) {
+      .card-grid { flex-direction: column; align-items: center; }
+      .container { max-width: 98vw; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Register Section -->
+  <div id="registerSection" class="center-card">
+    <h2>Register</h2>
+    <form id="registerForm">
+      <label>Username:
+        <input type="text" id="regUsername" required autocomplete="username">
+      </label>
+      <label>Password:
+        <div class="password-wrapper">
+          <input type="password" id="regPassword" required autocomplete="new-password">
+          <button type="button" class="toggle-password" onclick="togglePassword('regPassword', this)">👁️</button>
+        </div>
+      </label>
+      <label>Role:
+        <select id="regRole">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </label>
+      <button type="submit">Register</button>
+    </form>
+    <div class="error" id="registerError"></div>
+    <div class="success" id="registerSuccess"></div>
+    <div class="switch-link">
+      Already have an account? <a href="#" onclick="showSection('login')">Login here</a>
+    </div>
+  </div>Admiin
+
+  <!-- Login Section -->
+  <div id="loginSection" class="center-card hidden">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <label>Username:
+        <input type="text" id="loginUsername" required autocomplete="username">
+      </label>
+      <label>Password:
+        <div class="password-wrapper">
+          <input type="password" id="loginPassword" required autocomplete="current-password">
+          <button type="button" class="toggle-password" onclick="togglePassword('loginPassword', this)">👁️</button>
+        </div>
+      </label>
+      <label>Role:
+        <select id="loginRole">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </label>
+      <div class="captcha-box hidden" id="captchaBox">
+        <div style="margin-bottom:8px;">
+          Please type the following word: <b><span id="captchaQ"></span></b>
+        </div>
+        <input type="text" id="captchaA" placeholder="Type the word above">
+      </div>
+      <button type="submit">Login</button>
+    </form>
+    <div class="error" id="loginError"></div>
+    <div class="success" id="loginSuccess"></div>
+    <div class="switch-link">
+      Don't have an account? <a href="#" onclick="showSection('register')">Register here</a>
+    </div>
+  </div>
+
+  <!-- User Dashboard Section -->
+  <div id="userDashboard" class="center-card hidden">
+    <h2>User Dashboard</h2>
+    <div style="text-align:right;font-size:0.95em;color:#888;margin-bottom:1em;" id="userWelcome"></div>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <label>Upload PDF (max 5MB):
+        <input type="file" id="pdfFile" accept="application/pdf" required>
+      </label>
+      <button type="submit">Upload</button>
+    </form>
+    <div class="error" id="uploadError"></div>
+    <div class="success" id="uploadSuccess"></div>
+    <div class="file-list">
+      <h3>Your Uploaded Files</h3>
+      <ul id="userFiles"></ul>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Admin Dashboard Section -->
+  <div id="adminDashboard" class="container hidden">
+    <h2>Admin Dashboard</h2>
+    <div style="text-align:right;font-size:0.95em;color:#888;margin-bottom:1em;" id="adminWelcome"></div>
+    <div id="allFiles"></div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    // --- Password Show/Hide ---
+    function togglePassword(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (input.type === "password") {
+        input.type = "text";
+        btn.textContent = "🙈";
+      } else {
+        input.type = "password";
+        btn.textContent = "👁️";
+      }
+    }
+
+    // Hashing function using SHA-256
+    async function hashPassword(password) {
+      const msgUint8 = new TextEncoder().encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // --- Local storage for users, files, login attempts ---
+    let users = JSON.parse(localStorage.getItem('users') || '{}');
+    let files = JSON.parse(localStorage.getItem('files') || '{}');
+    let loginAttempts = JSON.parse(localStorage.getItem('loginAttempts') || '{}');
+    let blockUntil = JSON.parse(localStorage.getItem('blockUntil') || '{}');
+    let currentUser = null;
+    let inactivityTimer = null;
+
+    function saveUsers() { localStorage.setItem('users', JSON.stringify(users)); }
+    function saveFiles() { localStorage.setItem('files', JSON.stringify(files)); }
+    function saveLoginAttempts() { localStorage.setItem('loginAttempts', JSON.stringify(loginAttempts)); }
+    function saveBlockUntil() { localStorage.setItem('blockUntil', JSON.stringify(blockUntil)); }
+
+    function showSection(section) {
+      document.getElementById('registerSection').classList.add('hidden');
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('userDashboard').classList.add('hidden');
+      document.getElementById('adminDashboard').classList.add('hidden');
+      if (section === 'register') document.getElementById('registerSection').classList.remove('hidden');
+      if (section === 'login') document.getElementById('loginSection').classList.remove('hidden');
+      if (section === 'user') document.getElementById('userDashboard').classList.remove('hidden');
+      if (section === 'admin') document.getElementById('adminDashboard').classList.remove('hidden');
+    }
+
+    // --- Registration ---
+    document.getElementById('registerForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('regUsername').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const role = document.getElementById('regRole').value;
+      const errorDiv = document.getElementById('registerError');
+      const successDiv = document.getElementById('registerSuccess');
+      errorDiv.textContent = '';
+      successDiv.textContent = '';
+      if (!username || !password) {
+        errorDiv.textContent = 'Please fill in all fields.';
+        return;
+      }
+      if (users[username]) {
+        errorDiv.textContent = 'Username already exists.';
+        return;
+      }
+      if (!(/[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password) && password.length >= 8)) {
+        errorDiv.textContent = 'Password must be at least 8 characters, include upper, lower, number, and special character.';
+        return;
+      }
+      const hashed = await hashPassword(password);
+      users[username] = { password: hashed, role };
+      saveUsers();
+      successDiv.textContent = "Registration successful! Redirecting to login...";
+      setTimeout(() => showSection('login'), 500);
+    };
+
+    // --- Captcha logic (random word instead of math) ---
+    let captchaAnswer = null;
+    function showCaptcha() {
+      // Simple random word list for demo
+      const words = ["apple", "blue", "cloud", "river", "star", "green", "table", "mouse", "light", "dream"];
+      const word = words[Math.floor(Math.random() * words.length)];
+      captchaAnswer = word;
+      document.getElementById('captchaQ').textContent = word;
+      document.getElementById('captchaBox').classList.remove('hidden');
+    }
+    function hideCaptcha() {
+      document.getElementById('captchaBox').classList.add('hidden');
+      document.getElementById('captchaA').value = '';
+      captchaAnswer = null;
+    }
+
+    // --- Login ---
+    document.getElementById('loginForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const role = document.getElementById('loginRole').value;
+      const errorDiv = document.getElementById('loginError');
+      const successDiv = document.getElementById('loginSuccess');
+      errorDiv.textContent = '';
+      successDiv.textContent = '';
+
+      // Rate limiting: block for 3 minutes after 5 failed attempts
+      const now = Date.now();
+      if (blockUntil[username] && now < blockUntil[username]) {
+        const wait = Math.ceil((blockUntil[username] - now) / 1000);
+        errorDiv.textContent = `Too many failed attempts. Try again in ${wait} seconds.`;
+        return;
+      }
+
+      // Captcha after 3 failed attempts
+      if (loginAttempts[username] >= 3) {
+        document.getElementById('captchaBox').classList.remove('hidden');
+        const userCaptcha = document.getElementById('captchaA').value.trim().toLowerCase();
+        if (!captchaAnswer) showCaptcha();
+        else if (userCaptcha !== captchaAnswer) {
+          errorDiv.textContent = "Captcha incorrect. Please try again.";
+          showCaptcha();
+          return;
+        } else {
+          hideCaptcha();
+        }
+      } else {
+        hideCaptcha();
+      }
+
+      if (!username || !password) {
+        errorDiv.textContent = 'Please fill in all fields.';
+        return;
+      }
+      if (!users[username]) {
+        errorDiv.textContent = 'User not found. Please register first.';
+        loginAttempts[username] = (loginAttempts[username] || 0) + 1;
+        saveLoginAttempts();
+        if (loginAttempts[username] >= 5) {
+          blockUntil[username] = Date.now() + 3 * 60 * 1000;
+          saveBlockUntil();
+        }
+        return;
+      }
+      const hashed = await hashPassword(password);
+      if (users[username].password !== hashed) {
+        errorDiv.textContent = 'Incorrect password.';
+        loginAttempts[username] = (loginAttempts[username] || 0) + 1;
+        saveLoginAttempts();
+        if (loginAttempts[username] >= 5) {
+          blockUntil[username] = Date.now() + 3 * 60 * 1000;
+          saveBlockUntil();
+        }
+        if (loginAttempts[username] >= 3) showCaptcha();
+        return;
+      }
+      if (users[username].role !== role) {
+        errorDiv.textContent = 'Incorrect role selected.';
+        loginAttempts[username] = (loginAttempts[username] || 0) + 1;
+        saveLoginAttempts();
+        if (loginAttempts[username] >= 5) {
+          blockUntil[username] = Date.now() + 3 * 60 * 1000;
+          saveBlockUntil();
+        }
+        if (loginAttempts[username] >= 3) showCaptcha();
+        return;
+      }
+      // Success: reset attempts and block
+      loginAttempts[username] = 0;
+      blockUntil[username] = 0;
+      saveLoginAttempts();
+      saveBlockUntil();
+      hideCaptcha();
+      currentUser = { username, role };
+      successDiv.textContent = "Login successful! Redirecting...";
+      setTimeout(() => {
+        startInactivityTimer();
+        if (role === "admin") {
+          document.getElementById('adminWelcome').textContent = `Welcome, ${username} (Admin)`;
+          showSection('admin');
+          loadAllFiles();
+        } else {
+          document.getElementById('userWelcome').textContent = `Welcome, ${username}`;
+          showSection('user');
+          loadFiles();
+        }
+      }, 200); // Fast redirect
+    };
+
+    // --- Inactivity logout (15 min) ---
+    function startInactivityTimer() {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        alert("Logged out due to inactivity.");
+        logout();
+      }, 15 * 60 * 1000);
+    }
+    document.body.addEventListener('mousemove', startInactivityTimer);
+    document.body.addEventListener('keydown', startInactivityTimer);
+
+    // --- User Dashboard: Upload & List Files ---
+    function loadFiles() {
+      const ul = document.getElementById('userFiles');
+      ul.innerHTML = '';
+      if (!currentUser) return;
+      const userFiles = files[currentUser.username] || [];
+      if (userFiles.length === 0) {
+        ul.innerHTML = '<li>No files uploaded yet.</li>';
+      } else {
+        userFiles.forEach(f => {
+          const li = document.createElement('li');
+          const link = document.createElement('a');
+          link.href = f.data;
+          link.textContent = f.name;
+          link.download = f.name;
+          link.target = "_blank";
+          li.appendChild(link);
+          ul.appendChild(li);
+        });
+      }
+    }
+
+    document.getElementById('uploadForm').onsubmit = function(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('pdfFile');
+      const file = fileInput.files[0];
+      const errorDiv = document.getElementById('uploadError');
+      const successDiv = document.getElementById('uploadSuccess');
+      errorDiv.textContent = '';
+      successDiv.textContent = '';
+      if (!file) return;
+      if (file.type !== "application/pdf") {
+        errorDiv.textContent = "Only PDF files allowed.";
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        errorDiv.textContent = "File size exceeds 5MB.";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function() {
+        if (!files[currentUser.username]) files[currentUser.username] = [];
+        files[currentUser.username].push({ name: file.name, data: reader.result });
+        saveFiles();
+        successDiv.textContent = "Upload successful!";
+        loadFiles();
+      };
+      reader.readAsDataURL(file);
+      fileInput.value = '';
+    };
+
+    // --- Admin Dashboard: All Users' Files (Cards) ---
+    function getInitials(name) {
+      return name.split(' ').map(w => w[0].toUpperCase()).join('').slice(0,2);
+    }
+    function loadAllFiles() {
+      const container = document.getElementById('allFiles');
+      container.innerHTML = '';
+      if (Object.keys(files).length === 0) {
+        container.innerHTML = '<div class="file-list"><ul><li>No files uploaded yet.</li></ul></div>';
+      } else {
+        const grid = document.createElement('div');
+        grid.className = 'card-grid';
+        for (const user in files) {
+          const card = document.createElement('div');
+          card.className = 'user-card';
+          // Card header with avatar and name
+          const header = document.createElement('div');
+          header.className = 'user-header';
+          const avatar = document.createElement('div');
+          avatar.className = 'user-avatar';
+          avatar.textContent = getInitials(user);
+          const name = document.createElement('div');
+          name.className = 'user-name';
+          name.textContent = user;
+          header.appendChild(avatar);
+          header.appendChild(name);
+          card.appendChild(header);
+          // File list
+          const ul = document.createElement('ul');
+          ul.className = 'file-list';
+          files[user].forEach(f => {
+            const li = document.createElement('li');
+            const link = document.createElement('a');
+            link.href = f.data;
+            link.textContent = f.name;
+            link.download = f.name;
+            link.target = "_blank";
+            li.appendChild(link);
+            ul.appendChild(li);
+          });
+          card.appendChild(ul);
+          grid.appendChild(card);
+        }
+        container.appendChild(grid);
+      }
+    }
+
+    // --- Logout ---
+    function logout() {
+      currentUser = null;
+      showSection('login');
+    }
+
+    // On load: show login
+    showSection('login');
+  </script>
+</body>
+</html>
